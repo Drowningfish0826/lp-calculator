@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>網頁版線性規劃計算器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1>網頁版線性規劃計算器</h1>
+      <p class="sub">Web-based Linear Programming Calculator · 管理數學作業 1</p>
+    </div>
+    <div id="solver-badge" class="solver-badge loading" role="status" aria-live="polite">求解器載入中…</div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="功能選單">
+    <button class="tab active" role="tab" data-tab="general" aria-selected="true">一般線性規劃</button>
+    <button class="tab" role="tab" data-tab="transport" aria-selected="false">運輸問題範本</button>
+    <button class="tab" role="tab" data-tab="assign" aria-selected="false">指派問題範本</button>
+    <button class="tab" role="tab" data-tab="help" aria-selected="false">使用說明</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ========== 一般線性規劃 ========== -->
+<section id="tab-general" class="panel active" role="tabpanel">
+  <div class="card">
+    <h2><span class="step">1</span>問題設定</h2>
+    <div class="row">
+      <fieldset class="seg">
+        <legend>問題類型</legend>
+        <label><input type="radio" name="sense" value="max" checked> Maximization（最大化）</label>
+        <label><input type="radio" name="sense" value="min"> Minimization（最小化）</label>
+      </fieldset>
+      <label class="field">決策變數個數
+        <input id="g-n" type="number" min="1" max="12" value="2" inputmode="numeric">
+      </label>
+      <label class="field">目標值名稱（選填）
+        <input id="g-objname" type="text" placeholder="例：最大利潤、最小成本">
+      </label>
+      <label class="field">決策量單位（選填）
+        <input id="g-unit" type="text" value="單位" placeholder="例：單位、公斤">
+      </label>
+      <label class="field">載入範例
+        <select id="g-example">
+          <option value="">— 請選擇 —</option>
+          <option value="hw">作業範例：max 20x₁+15x₂</option>
+          <option value="prod3">三產品生產組合（3 變數）</option>
+          <option value="diet">飲食問題（最小化成本）</option>
+          <option value="int">整數規劃：桌椅生產</option>
+          <option value="knap">0-1 規劃：專案選擇</option>
+          <option value="infeasible">無可行解示範</option>
+          <option value="unbounded">無界解示範</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span>決策變數</h2>
+    <p class="hint">可為每個變數命名管理意義（例如「產品A」），並設定是否有非負限制、或指定為整數 / 0-1 變數。</p>
+    <div id="g-vars" class="scroll"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span>目標函數</h2>
+    <div id="g-obj"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span>限制式</h2>
+    <div id="g-cons" class="scroll"></div>
+    <div class="row actions">
+      <button id="g-addcon" class="btn">＋ 新增限制式</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">5</span>完整數學模型</h2>
+    <pre id="g-model" class="model" aria-live="polite"></pre>
+    <div class="row actions">
+      <button id="g-solve" class="btn primary big">求解（Solve）</button>
+      <button id="g-reset" class="btn">清除全部</button>
+    </div>
+  </div>
+
+  <div id="g-result" class="result" aria-live="polite"></div>
+</section>
+
+<!-- ========== 運輸問題 ========== -->
+<section id="tab-transport" class="panel" role="tabpanel" hidden>
+  <div class="card">
+    <h2><span class="step">1</span>建立問題規模</h2>
+    <div class="row">
+      <label class="field">供給地（Sources）數量
+        <input id="t-m" type="number" min="1" max="8" value="3" inputmode="numeric">
+      </label>
+      <label class="field">需求地（Destinations）數量
+        <input id="t-n" type="number" min="1" max="8" value="4" inputmode="numeric">
+      </label>
+      <div class="field"><span>&nbsp;</span><button id="t-example" class="btn">載入作業範例資料</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2><span class="step">2</span>輸入資料</h2>
+    <p class="hint">輸入運輸成本矩陣、各供給地供應量與各需求地需求量。供給地與需求地名稱可自行修改。</p>
+    <div id="t-form" class="scroll"></div>
+    <p id="t-balance" class="balance"></p>
+    <div class="row actions">
+      <button id="t-build" class="btn">建立模型</button>
+      <button id="t-solve" class="btn primary big">求解（Solve）</button>
+    </div>
+  </div>
+  <div class="card" id="t-model-card" hidden>
+    <h2><span class="step">3</span>自動建立的數學模型</h2>
+    <p class="hint" id="t-model-hint"></p>
+    <pre id="t-model" class="model"></pre>
+  </div>
+  <div id="t-result" class="result" aria-live="polite"></div>
+</section>
+
+<!-- ========== 指派問題 ========== -->
+<section id="tab-assign" class="panel" role="tabpanel" hidden>
+  <div class="card">
+    <h2><span class="step">1</span>建立問題規模</h2>
+    <div class="row">
+      <label class="field">人員（或機器）數量
+        <input id="a-m" type="number" min="1" max="8" value="4" inputmode="numeric">
+      </label>
+      <label class="field">工作數量
+        <input id="a-n" type="number" min="1" max="8" value="4" inputmode="numeric">
+      </label>
+      <fieldset class="seg">
+        <legend>目標</legend>
+        <label><input type="radio" name="a-sense" value="min" checked> 最小化總成本</label>
+        <label><input type="radio" name="a-sense" value="max"> 最大化總效益</label>
+      </fieldset>
+      <div class="field"><span>&nbsp;</span><button id="a-example" class="btn">載入範例資料</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2><span class="step">2</span>輸入成本（效益）矩陣</h2>
+    <p class="hint">每位人員至多指派一項工作、每項工作至多由一位人員負責；人數與工作數不同時，數量較少的一方會被全部指派。</p>
+    <div id="a-form" class="scroll"></div>
+    <div class="row actions">
+      <button id="a-build" class="btn">建立模型</button>
+      <button id="a-solve" class="btn primary big">求解（Solve）</button>
+    </div>
+  </div>
+  <div class="card" id="a-model-card" hidden>
+    <h2><span class="step">3</span>自動建立的數學模型</h2>
+    <pre id="a-model" class="model"></pre>
+  </div>
+  <div id="a-result" class="result" aria-live="polite"></div>
+</section>
+
+<!-- ========== 使用說明 ========== -->
+<section id="tab-help" class="panel" role="tabpanel" hidden>
+  <div class="card prose">
+    <h2>使用說明</h2>
+    <h3>一般線性規劃</h3>
+    <ol>
+      <li>選擇問題類型（最大化或最小化），輸入決策變數個數，系統會自動產生輸入欄位。</li>
+      <li>輸入目標函數係數與各限制式（係數、符號 ≤ / = / ≥、右端常數 RHS）。可按「＋ 新增限制式」增加限制式。</li>
+      <li>可取消個別變數的非負限制，也可將變數指定為整數（xᵢ ∈ Z）或 0-1（xᵢ ∈ {0,1}）。</li>
+      <li>頁面會即時顯示完整數學模型。按下「求解」後顯示最佳解、最佳目標函數值、管理意涵、限制式分析與敏感度分析。</li>
+      <li>決策變數為兩個時，會自動繪製限制式、可行區域、最佳解與等利潤線（等成本線）。</li>
+    </ol>
+    <p>輸入欄位可使用小數或分數（例如 <code>0.5</code>、<code>1/3</code>）。</p>
+    <h3>管理科學範本</h3>
+    <p><b>運輸問題</b>：輸入供給地與需求地數量 → 輸入成本矩陣、供應量、需求量 → 建立模型 → 求解 → 檢視最佳運輸方案與結果分析。<br>
+       <b>指派問題</b>：輸入人員與工作數量及成本（或效益）矩陣 → 建立模型 → 求解 → 檢視最佳指派。</p>
+    <h3>名詞解釋</h3>
+    <ul>
+      <li><b>Binding Constraint（緊束限制）</b>：在最佳解時等號成立的限制式，代表該資源已用盡（或需求剛好滿足）。</li>
+      <li><b>Slack / Surplus（鬆弛量）</b>：≤ 限制式尚未用完的資源量；≥ 限制式超出下限的量。</li>
+      <li><b>Shadow Price（影子價格）</b>：右端常數增加 1 單位時，最佳目標函數值的變化量；僅在「允許範圍」內有效。</li>
+      <li><b>Reduced Cost（減少成本）</b>：強迫一個未被採用的變數增加 1 單位時，目標函數值的變化量。</li>
+    </ul>
+    <h3>技術說明</h3>
+    <p>本系統以 HTML / CSS / JavaScript 開發，求解引擎為 <b>HiGHS</b>（以 WebAssembly 編譯，已內嵌於 <code>lib/</code> 資料夾）。所有計算皆在瀏覽器本機完成，不需要網路連線；直接以瀏覽器開啟 <code>index.html</code> 即可使用。</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">求解引擎：HiGHS (WebAssembly)　·　所有計算皆在瀏覽器本機完成</footer>
+
+<script src="lib/highs.js"></script>
+<script src="lib/highs-wasm.js"></script>
+<script src="lib/lp-core.js"></script>
+<script src="lib/graph.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
